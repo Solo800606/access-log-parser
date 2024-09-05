@@ -30,27 +30,45 @@ public class Main {
                 System.out.println("Путь указан верно");
                 System.out.println("Это файл номер " + count + "\n");
                 count++;
+        // Работа с файлом
                 try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     String line;
                     int totalLines = 0;
-                    int maxLength = 0;
-                    int minLength = Integer.MAX_VALUE;
+                    int googlebotCount = 0;
+                    int yandexbotCount = 0;
                     while ((line = reader.readLine()) != null) {
-                        int length = line.length();
-                        if (length > 1024) {
+                        if (line.length() > 1024) {
                             throw new LineTooLongException("ОБНАРУЖЕНА строка длиннее 1024 символов!!!");
                         }
                         totalLines++;
-                        if (length > maxLength) {
-                            maxLength = length;
-                        }
-                        if (length < minLength) {
-                            minLength = length;
+        // Разделение строки на составляющие
+                        String[] parts = line.split("\"");
+                        if (parts.length > 5) {
+                            String userAgent = parts[5];
+        // Обработка фрагмента User-Agent
+                            int start = userAgent.indexOf('(');
+                            int end = userAgent.indexOf(')');
+                            if (start != -1 && end != -1) {
+                                String firstBrackets = userAgent.substring(start + 1, end);
+                                String[] uaParts = firstBrackets.split(";");
+                                if (uaParts.length >= 2) {
+                                    String fragment = uaParts[1].trim();
+                                    String program = fragment.split("/")[0].trim();
+                                    if (program.equals("Googlebot")) {
+                                        googlebotCount++;
+                                    } else if (program.equals("YandexBot")) {
+                                        yandexbotCount++;
+                                    }
+                                }
+                            }
                         }
                     }
+        // Инфа по запросам от YandexBot и Googlebot + Общее количество строк
                     System.out.println("Общее количество строк в файле: " + totalLines);
-                    System.out.println("Длина самой длинной строки в файле: " + maxLength);
-                    System.out.println("Длина самой короткой строки в файле: " + minLength);
+                    double googlebotShare = (double) googlebotCount / totalLines * 100;
+                    double yandexbotShare = (double) yandexbotCount / totalLines * 100;
+                    System.out.println("Доля запросов от Googlebot: " + googlebotShare + "%");
+                    System.out.println("Доля запросов от YandexBot: " + yandexbotShare + "%");
 
                 } catch (IOException ex) {
                     ex.printStackTrace();
